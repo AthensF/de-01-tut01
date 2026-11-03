@@ -48,4 +48,3 @@ jobs:
           path: data/investigations/
           if-no-files-found: ignore
           retention-days: 7
-

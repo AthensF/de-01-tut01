@@ -63,4 +63,3 @@ jobs:
           path: data/runs/
           if-no-files-found: ignore
           retention-days: 7
-

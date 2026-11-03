@@ -66,4 +66,3 @@ Use stable key ordering and bounded requests. Record acquisition start/end times
 - Counts of reported crashes are not estimates of road danger without an appropriate exposure denominator.
 - Preserve source columns in landing/bronze; use reviewed mappings for clean names and types.
 - Deliberately renamed fields and corrupted records used in lessons are labelled test fixtures, not claims about publisher behavior.
-

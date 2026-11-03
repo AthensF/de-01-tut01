@@ -105,4 +105,3 @@ approached.
 ## Tutorial provenance
 
 This course adapts the engineering concepts in [Data with Baraa's tutorial](https://www.youtube.com/watch?v=F5lZj1bQyUw) and its [companion repository](https://github.com/DataWithBaraa/claude-code-data-engineering-skills). It builds the platform foundations that the video assumes already exist, using a different source and Codex workflows. Source data, synthetic fixtures, injected defects, and simulated operational history are kept distinguishable.
-

@@ -138,4 +138,3 @@ No public endpoint may initiate inference. Reports remain recommendations. Sched
 The capstone is complete only after a controlled fault has produced a failed run, preserved the previous data version, yielded a grounded diagnosis, and been corrected with a verified rerun. Restart the API and prove that the recovered publication is still served.
 
 For platform review, label replayed workloads and simulated history. A table unobserved in a short log window is not automatically unused or safe to remove.
-

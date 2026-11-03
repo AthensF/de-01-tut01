@@ -20,4 +20,3 @@ jobs:
       - run: uv run pytest
       - name: Run the synthetic teaching pipeline
         run: uv run python -m roadsafety pipeline --mode fixture --as-of 2026-11-01 --data-dir ci-data
-

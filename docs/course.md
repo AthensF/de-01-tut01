@@ -355,4 +355,3 @@ uv run python course/chapter_16_capstone.py --data-dir data
 Keep a short learning log linking each completion check to its command, input, result, and artifact. Use the capstone to demonstrate the integrated system rather than collecting screenshots of commands that merely started.
 
 The local course is complete when its fixture checks pass and you can explain every publication boundary. The live shared service requires an additional source-verification result, successful hosted processing, external API checks, and the configured hosted investigation. Record each outcome separately.
-
