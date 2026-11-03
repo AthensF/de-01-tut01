@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: road-safety-learning-api
+    runtime: python
+    plan: free
+    autoDeploy: false
+    buildCommand: pip install uv==0.13.4 && uv sync --frozen
+    startCommand: uv run --no-sync uvicorn roadsafety.api:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /ready
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: ROADSAFETY_DATA_DIR
+        value: /tmp/roadsafety
+      - key: ROADSAFETY_MANIFEST_URL
+        sync: false
+

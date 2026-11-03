@@ -1,0 +1,13 @@
+{
+  "status": "proposed_not_saved",
+  "reason": "Environment draft update returned draft_not_editable; running policy blocks source and GitHub API access.",
+  "required_source_hosts": ["data.cityofnewyork.us", "www.nyc.gov"],
+  "deployment_hosts": ["api.github.com", "uploads.github.com", "render.com", "api.render.com"],
+  "hosted_investigation_host": "api.openai.com",
+  "instructions": "Add required destinations to existing environment settings without dropping existing rules. GitHub Actions runs outside this workspace and uses its own repository secrets. No credentials belong in this file.",
+  "github_actions_secret_requirements": ["OPENAI_API_KEY"],
+  "render_configuration": {
+    "ROADSAFETY_MANIFEST_URL": "https://github.com/AthensF/de-01-tut01/releases/latest/download/manifest.json",
+    "ROADSAFETY_DATA_DIR": "/tmp/roadsafety"
+  }
+}
