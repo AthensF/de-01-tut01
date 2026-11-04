@@ -65,6 +65,8 @@ The seven Codex procedures live under `.agents/skills/`: `profile`, `metadata`, 
 
 The proposed sources are NYC's [Motor Vehicle Collisions — Crashes](https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Crashes/h9gi-nx95) and [Vehicles](https://data.cityofnewyork.us/Public-Safety/Motor-Vehicle-Collisions-Vehicles/bm4k-52h4). Read the [source guide](docs/source-guide.md) before enabling live mode.
 
+The [first live exercise](docs/first-live-exercise.md) uses an acquired seven-day pilot, actual missing-data findings, and a text-identifier pagination bug exposed by real validation. Use the bounded `live-pilot` command before a full-history backfill.
+
 The application retains a rolling 24 months. Daily runs revisit 90 days; weekly full runs reconcile the retained horizon. This catches older corrections eventually, rather than claiming complete change-data capture. Raw source responses, checksums, acquisition boundaries, and run records provide evidence.
 
 Each published snapshot identifies whether it came from fixtures or live data. Unknown borough or location stays visible. Collision and injury totals are calculated from crash records; vehicle counts use their own grain.

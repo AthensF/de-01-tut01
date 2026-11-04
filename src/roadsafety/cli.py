@@ -16,7 +16,7 @@ def parser() -> argparse.ArgumentParser:
     commands = result.add_subparsers(dest="command", required=True)
     names = ["verify-sources", "pipeline", "profile", "metadata", "data-product", "toolkit", "incident",
              "review", "platform-review", "serve", "publish", "restore-state", "save-operations",
-             "investigate", "lesson", "record-incident"]
+             "investigate", "lesson", "record-incident", "live-pilot"]
     for name in names:
         p = commands.add_parser(name)
         p.add_argument("--data-dir", type=Path, default=Path(os.environ.get("ROADSAFETY_DATA_DIR", "data")))
@@ -27,6 +27,9 @@ def parser() -> argparse.ArgumentParser:
             p.add_argument("--input-dir", type=Path, help="Explicit synthetic JSON inputs only")
         if name == "verify-sources":
             p.add_argument("--accept-source-terms", action="store_true", help="Acknowledge the source terms you reviewed")
+        if name == "live-pilot":
+            p.add_argument("--start-date", type=date.fromisoformat, required=True)
+            p.add_argument("--end-date", type=date.fromisoformat, required=True)
         if name == "serve":
             p.add_argument("--host", default="127.0.0.1")
             p.add_argument("--port", type=int, default=8000)
@@ -51,6 +54,9 @@ def main(argv: list[str] | None = None):
             from roadsafety.pipeline import run_pipeline
             output = run_pipeline(args.data_dir, mode=args.mode, as_of=args.as_of,
                                   full_reconcile=args.full_reconcile, input_dir=args.input_dir)
+        elif args.command == "live-pilot":
+            from roadsafety.pilot import run_pilot
+            output = run_pilot(args.data_dir, args.start_date, args.end_date)
         elif args.command == "verify-sources":
             from roadsafety.ingest import verify_sources
             output = verify_sources(args.data_dir)

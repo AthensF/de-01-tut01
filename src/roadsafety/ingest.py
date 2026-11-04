@@ -99,6 +99,31 @@ def _metadata_fields(metadata: dict[str, Any], required: tuple[str, ...]) -> lis
     return names
 
 
+def _key_type(column_types: dict[str, Any], key: str) -> str:
+    declared = column_types.get(key)
+    if declared not in ("number", "text"):
+        raise AcquisitionError(
+            f"Pagination key {key} has missing or unsupported datatype: {declared!r}"
+        )
+    return declared
+
+
+def _pagination_key(value: Any, key_type: str, key: str) -> int | str:
+    if key_type == "text":
+        if not isinstance(value, str) or not value:
+            raise AcquisitionError(f"Missing or non-text pagination key {key}")
+        return value
+    if isinstance(value, bool) or not re.fullmatch(r"-?[0-9]+", str(value)):
+        raise AcquisitionError(f"Missing or non-integer pagination key {key}")
+    return int(value)
+
+
+def _cursor_literal(cursor: int | str) -> str:
+    if isinstance(cursor, str):
+        return "'" + cursor.replace("'", "''") + "'"
+    return str(cursor)
+
+
 def _evidence(metadata: dict[str, Any]) -> dict[str, Any]:
     """Copy publisher evidence verbatim; do not manufacture missing terms."""
     details = metadata.get("metadata")
@@ -168,6 +193,7 @@ def verify_sources(data_dir: Path, client: httpx.Client | None = None) -> dict[s
                     raise AcquisitionError("Metadata response is not an object")
                 names = _metadata_fields(metadata, source["required"])
                 entry.update(_evidence(metadata))
+                entry["key_type"] = _key_type(entry["column_types"], source["key"])
                 entry["title"] = metadata.get("name")
                 entry["columns"] = names
                 entry["column_descriptions"] = {
@@ -182,7 +208,8 @@ def verify_sources(data_dir: Path, client: httpx.Client | None = None) -> dict[s
                     and column["description"].strip()
                 }
                 entry["schema_fingerprint"] = hashlib.sha256(
-                    json.dumps(names).encode()
+                    json.dumps({"columns": names, "column_types": entry["column_types"]},
+                               sort_keys=True).encode()
                 ).hexdigest()
                 probe = _get(active, entry["data_url"], params={
                     "$limit": 1, "$order": f"{source['key']} ASC",
@@ -191,6 +218,7 @@ def verify_sources(data_dir: Path, client: httpx.Client | None = None) -> dict[s
                     raise AcquisitionError("Anonymous sample probe returned no records")
                 if not isinstance(probe[0], dict) or source["key"] not in probe[0]:
                     raise AcquisitionError("Sample does not contain the expected business key")
+                _pagination_key(probe[0][source["key"]], entry["key_type"], source["key"])
                 entry["probe_rows"] = len(probe)
                 entry["status"] = "verified"
                 if not entry["cadence_evidence"]:
@@ -207,6 +235,8 @@ def verify_sources(data_dir: Path, client: httpx.Client | None = None) -> dict[s
             for name, entry in report["sources"].items()
         )
         report["terms_acknowledged"] = bool(previous.get("terms_acknowledged") and same_terms)
+        if report["terms_acknowledged"] and isinstance(previous.get("terms_review"), dict):
+            report["terms_review"] = previous["terms_review"]
     _write_json(path, report)
     return report
 
@@ -266,22 +296,27 @@ def acquire_live(
                 metadata = _get(active, f"{BASE_URL}/api/views/{dataset_id}.json").json()
                 names = _metadata_fields(metadata, source["required"])
                 evidence = _evidence(metadata)
+                key_type = _key_type(evidence["column_types"], key)
+                if key_type != gate["sources"][name].get("key_type"):
+                    raise AcquisitionError(f"{name} key datatype changed; review and verify again")
                 if evidence["terms_evidence"] != gate["sources"][name].get("terms_evidence"):
                     raise AcquisitionError(f"{name} source terms metadata changed; review and verify again")
                 source_dir = root / name
                 source_dir.mkdir()
                 manifest: dict[str, Any] = {
                     "dataset_id": dataset_id, "columns": names,
+                    "column_types": evidence["column_types"], "key_type": key_type,
                     "complete": False, "pages": [], "row_count": 0,
                 }
                 provenance["sources"][name] = manifest
-                cursor = -1
+                cursor: int | str | None = None
                 for page_number in range(max_pages):
                     where = (
                         f"crash_date >= '{start.isoformat()}T00:00:00' AND "
-                        f"crash_date < '{(end + timedelta(days=1)).isoformat()}T00:00:00' "
-                        f"AND {key} > {cursor}"
+                        f"crash_date < '{(end + timedelta(days=1)).isoformat()}T00:00:00'"
                     )
+                    if cursor is not None:
+                        where += f" AND {key} > {_cursor_literal(cursor)}"
                     response = _get(active, f"{BASE_URL}/resource/{dataset_id}.json", params={
                         "$where": where, "$order": f"{key} ASC", "$limit": page_size,
                     })
@@ -298,12 +333,10 @@ def acquire_live(
                         raise AcquisitionError(f"{name}: expected a bounded JSON array")
                     for row in rows:
                         value = row.get(key) if isinstance(row, dict) else None
-                        if value is None or not re.fullmatch(r"\d+", str(value)):
-                            raise AcquisitionError(f"{name}: missing or non-integer {key}")
-                        integer_key = int(value)
-                        if integer_key <= cursor:
+                        typed_key = _pagination_key(value, key_type, key)
+                        if cursor is not None and typed_key <= cursor:
                             raise AcquisitionError(f"{name}: duplicate or unordered pagination key {key}")
-                        cursor = integer_key
+                        cursor = typed_key
                         try:
                             observed_date = date.fromisoformat(str(row["crash_date"])[:10])
                         except (KeyError, ValueError) as error:

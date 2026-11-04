@@ -38,7 +38,15 @@ uv run python -m roadsafety verify-sources --data-dir live-data --accept-source-
 
 Acknowledgment records the operator's review; it does not manufacture a licence when metadata omitted one. If the terms, required fields, or update cadence do not support the intended public service, resolve that before live publication.
 
-Then acquire and run:
+Before the full-history run, use the [first live exercise](first-live-exercise.md) to acquire and profile a bounded pilot (at most 31 inclusive days):
+
+```bash
+uv run python -m roadsafety live-pilot --data-dir live-pilot --start-date 2026-10-25 --end-date 2026-10-31
+```
+
+Verify sources and acknowledge the reviewed terms in that same `live-pilot` directory first. The pilot preserves raw pages and profiles both sources without creating a production snapshot.
+
+Then acquire and run the full production history in its own verified directory:
 
 ```bash
 uv run python -m roadsafety pipeline --mode live --data-dir live-data
